@@ -9,8 +9,50 @@ HAI 1.4
 	I HAS A incoming_command
 	I HAS A connection_open ITZ FAIL
 	
-	BTW binds a socket to port 22
-	sock R I IZ SOCKS'Z BIND YR "127.0.0.1" AN YR 22 MKAY
+	BTW binds a socket
+	sock R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
+	
+	BTW ------------- tokenizer TODO: use generator instead
+	HOW IZ I tokenize YR string AN YR separator
+		I HAS A result ITZ A BUKKIT
+		I HAS A zero ITZ 1
+		I HAS A tokens_counter ITZ 1
+		I HAS A curr_char ITZ ""
+		I HAS A curr_token ITZ ""
+		I HAS A str_length ITZ I IZ STRING'Z LEN YR string MKAY
+		IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN str_length  
+			curr_char R I IZ STRING'Z AT YR string AN YR i MKAY
+			
+			BTW can't use WTF? since separator isn't a literal
+			BOTH SAEM curr_char AN separator
+			O RLY?
+				YA RLY
+					BTW new token found, add to the bukkit
+					tokens_counter R SUM OF tokens_counter AN 1
+					result HAS A  ITZ curr_token
+					curr_token R ""
+				BTW last character is unicode for /r
+				MEBBE ANY OF BOTH SAEM curr_char AN ":)" AN BOTH SAEM curr_char AN ":(D)" MKAY
+					BTW last token
+					tokens_counter R SUM OF tokens_counter AN 1
+					result HAS A ":{tokens_counter}" ITZ curr_token
+					result HAS A "0" ITZ tokens_counter
+					FOUND YR result
+				NO WAI 
+					BTW normal character, add to the current token
+					curr_token R SMOOSH curr_token AN curr_char MKAY	
+			OIC
+			
+		IM OUTTA YR loop
+		
+		BTW last token
+		tokens_counter R SUM OF tokens_counter AN 1
+		result HAS A ":{tokens_counter}" ITZ curr_token
+		result HAS A "0" ITZ tokens_counter
+		
+		FOUND YR result
+	IF U SAY SO
+	BTW ------------- tokenizer
 	
 	BTW ------------- reads a file and returns content
 	HOW IZ I read YR file
@@ -80,9 +122,21 @@ BTW				reply_command R "504 WATZ TTAT"
 				I HAS A list ITZ I IZ read YR "whitelist.lul" MKAY
 				VISIBLE "MA LIST " AN list
 				list, O RLY?
-						YA RLY,reply_command R SMOOSH "150-OP:)" AN list AN ":)150 END:)226 FIUU" MKAY
+						YA RLY,reply_command R SMOOSH "150 Opening:)" AN list AN ":)226 fin" MKAY
 						NO WAI,reply_command R "421 O NOES MA LIST"
 					OIC
+				GTFO
+			OMG "FEAT"
+				reply_command R "502 WAT"
+				GTFO
+			OMG "SYST"
+				reply_command R "215 LOL I AM"
+				GTFO
+			OMG "CWD"
+				reply_command R "250 WERE U GOIN"
+				GTFO
+			OMG "REST"
+				reply_command R "350 WATCHA WAITIN FOR"
 				GTFO
 			OMG "MODE"
 				
@@ -110,11 +164,21 @@ BTW				reply_command R "504 WATZ TTAT"
 	BTW connection loop
 	IM IN YR connection_loop
 	
+		BTW ----------------
+		
+		I HAS A test
+		test R I IZ tokenize YR "192,168,1,299,39,23:)" AN YR "," MKAY
+		I HAS A myVar ITZ test'Z SRS 1
+		IM IN YR loop UPPIN YR i TIL NOT BOTH SAEM i AN myVar
+			VISIBLE test'Z i AN ":)"
+		IM OUTTA YR loop
+		BTW ----------------
+	
 		BTW listens for a connection
 		conn R I IZ SOCKS'Z LISTN YR sock MKAY
 		
 		BTW welcome message
-		I IZ SOCKS'Z PUT YR sock AND YR conn AN YR "220 TIS WORKIN? U LISTENIN?:)" MKAY
+		I IZ SOCKS'Z PUT YR sock AN YR conn AN YR "220 TIS WORKIN? U LISTENIN?:)" MKAY
 		VISIBLE "220 TIS WORKIN? U LISTENIN?"
 		connection_open R WIN
 		
