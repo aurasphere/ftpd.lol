@@ -12,7 +12,60 @@ HAI 1.4
 	BTW binds a socket
 	sock R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
 	
-	BTW ------------- tokenizer TODO: use generator instead
+	BTW ------------- substring (last index not inclusive) tested OK
+	HOW IZ I substring YR string AN YR start AN YR end
+		I HAS A cursor ITZ start
+		I HAS A result ITZ ""
+		I HAS A curr_char ITZ ""
+		
+		BTW assuming parameters are correct for the moment
+		IM IN YR loop UPPIN YR cursor TIL BOTH SAEM cursor AN end
+			DIFFRINT cursor AN BIGGR OF cursor AN start
+			O RLY?
+				YA RLY
+				NO WAI,
+					curr_char R I IZ STRING'Z AT YR string AN YR cursor MKAY
+					result R SMOOSH result AN curr_char MKAY
+			OIC
+		IM OUTTA YR loop
+		VISIBLE "substring [" AN string AN "] " AN start AN " - " AN end AN " = " result
+		FOUND YR result
+	IF U SAY SO
+	BTW ------------- substring
+	
+	BTW ------------- tokenizer generator (bug: 2 consecutive tokens return FAIL) tested OK
+	HOW IZ I tokenizer_generator YR string AN YR separator AN YR position
+		VISIBLE "position " AN position
+		I HAS A tokens_counter ITZ 0
+		I HAS A curr_char ITZ ""
+		I HAS A last_token_start_index ITZ 0
+		I HAS A last_token_end_index ITZ 0
+		I HAS A str_length ITZ I IZ STRING'Z LEN YR string MKAY
+		
+		BTW position to the current token 
+		IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN str_length
+			curr_char R I IZ STRING'Z AT YR string AN YR i MKAY
+			ANY OF BOTH SAEM curr_char AN ":)" AN BOTH SAEM curr_char AN ":(D)" AN BOTH SAEM curr_char AN separator MKAY
+			O RLY?
+				YA RLY
+					BTW last token is the separator since it's not inclusive
+					last_token_end_index R i
+					BOTH SAEM tokens_counter AN position
+						O RLY?
+							YA RLY
+								FOUND YR I IZ substring YR string AN YR last_token_start_index AN YR last_token_end_index MKAY
+							NO WAI
+						OIC
+					tokens_counter R SUM OF tokens_counter AN 1
+					last_token_start_index R SUM OF last_token_end_index AN 1
+				NO WAI
+			OIC
+		IM OUTTA YR loop
+		FOUND YR FAIL
+	IF U SAY SO
+	BTW ------------- tokenizer generator
+	
+	OBTW ------------- tokenizer TODO: use generator instead
 	HOW IZ I tokenize YR string AN YR separator
 		I HAS A result ITZ A BUKKIT
 		I HAS A zero ITZ 1
@@ -52,8 +105,8 @@ HAI 1.4
 		
 		FOUND YR result
 	IF U SAY SO
-	BTW ------------- tokenizer
-	
+	 ------------- tokenizer
+	TLDR
 	BTW ------------- reads a file and returns content
 	HOW IZ I read YR file
 		I HAS A content ITZ ""
@@ -164,15 +217,18 @@ BTW				reply_command R "504 WATZ TTAT"
 	BTW connection loop
 	IM IN YR connection_loop
 	
-		BTW ----------------
-		
+		OBTW ----------------
 		I HAS A test
-		test R I IZ tokenize YR "192,168,1,299,39,23:)" AN YR "," MKAY
-		I HAS A myVar ITZ test'Z SRS 1
-		IM IN YR loop UPPIN YR i TIL NOT BOTH SAEM i AN myVar
-			VISIBLE test'Z i AN ":)"
+		IM IN YR loop UPPIN YR i
+			VISIBLE "test"
+			test R I IZ tokenizer_generator YR "192,168,1,299,39,23:)" AN YR "," AN YR i MKAY
+			test, O RLY?
+				YA RLY, VISIBLE test AN ":)"
+				NO WAI, GTFO
+			OIC
 		IM OUTTA YR loop
 		BTW ----------------
+		TLDR
 	
 		BTW listens for a connection
 		conn R I IZ SOCKS'Z LISTN YR sock MKAY
