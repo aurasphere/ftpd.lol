@@ -6,55 +6,30 @@ HAI 1.4
 	BTW variables
 	I HAS A command_socket
 	I HAS A command_connection
-	I HAS A data_socket
-	I HAS A data_connection
+	I HAS A data_ip ITZ ""
+	I HAS A data_port
 	I HAS A incoming_command
 	I HAS A connection_open ITZ FAIL
 	
-	BTW dec-hex converter (tested OK)
+	BTW dec-hex converter
 	O HAI IM dec_hex_converter
-		BTW use string and charat
-		I HAS A hex0 ITZ "0"
-		I HAS A hex1 ITZ "1"
-		I HAS A hex2 ITZ "2"
-		I HAS A hex3 ITZ "3"
-		I HAS A hex4 ITZ "4"
-		I HAS A hex5 ITZ "5"
-		I HAS A hex6 ITZ "6"
-		I HAS A hex7 ITZ "7"
-		I HAS A hex8 ITZ "8"
-		I HAS A hex9 ITZ "9"
-		I HAS A hex10 ITZ "A"
-		I HAS A hex11 ITZ "B"
-		I HAS A hex12 ITZ "C"
-		I HAS A hex13 ITZ "D"
-		I HAS A hex14 ITZ "E"
-		I HAS A hex15 ITZ "F"
-		
-		I HAS A dec0 ITZ "0"
-		I HAS A dec1 ITZ "1"
-		I HAS A dec2 ITZ "2"
-		I HAS A dec3 ITZ "3"
-		I HAS A dec4 ITZ "4"
-		I HAS A dec5 ITZ "5"
-		I HAS A dec6 ITZ "6"
-		I HAS A dec7 ITZ "7"
-		I HAS A dec8 ITZ "8"
-		I HAS A dec9 ITZ "9"
-		I HAS A decA ITZ "10"
-		I HAS A decB ITZ "11"
-		I HAS A decC ITZ "12"
-		I HAS A decD ITZ "13"
-		I HAS A decE ITZ "14"
-		I HAS A decF ITZ "15"
-		
+
 		HOW IZ I dec_to_hex YR number
 			I HAS A remainder
+			I HAS A curr_digit
 			I HAS A result ITZ ""
 			IM IN YR loop NERFIN YR mom WILE DIFFRINT number AN SMALLR OF number AN 0
 				remainder R MOD OF number AN 16
-				I HAS A digit_var_name ITZ SMOOSH "hex" AN remainder MKAY
-				result R SMOOSH ME'Z SRS digit_var_name AN result MKAY
+				remainder, WTF?
+					OMG 10, curr_digit R "A", GTFO
+					OMG 11, curr_digit R "B", GTFO
+					OMG 12, curr_digit R "C", GTFO
+					OMG 13, curr_digit R "D", GTFO
+					OMG 14, curr_digit R "E", GTFO
+					OMG 15, curr_digit R "F", GTFO
+					OMGWTF, curr_digit R remainder, GTFO
+				OIC
+				result R SMOOSH curr_digit AN result MKAY
 				number R QUOSHUNT OF number AN 16
 			IM OUTTA YR loop
 			FOUND YR result
@@ -62,12 +37,21 @@ HAI 1.4
 		
 		HOW IZ I hex_to_dec YR number
 			I HAS A num_length ITZ I IZ STRING'Z LEN YR number MKAY
-			I HAS A curr_digit
+			I HAS A curr_digit_value
+			I HAS A curr_char
 			I HAS A result ITZ 0
 			IM IN YR loop UPPIN YR i WILE DIFFRINT i AN BIGGR OF i AN num_length
-				curr_digit R I IZ STRING'Z AT YR number AN YR i MKAY
-				I HAS A digit_var_name ITZ SMOOSH "dec" AN curr_digit MKAY
-				result R SUM OF PRODUKT OF 16 AN result AN ME'Z SRS digit_var_name
+				curr_char R I IZ STRING'Z AT YR number AN YR i MKAY
+				curr_char, WTF?
+					OMG "A", curr_digit_value R 10, GTFO
+					OMG "B", curr_digit_value R 11, GTFO
+					OMG "C", curr_digit_value R 12, GTFO
+					OMG "D", curr_digit_value R 13, GTFO
+					OMG "E", curr_digit_value R 14, GTFO
+					OMG "F", curr_digit_value R 15, GTFO
+					OMGWTF, curr_digit_value R curr_char, GTFO
+				OIC
+				result R SUM OF PRODUKT OF 16 AN result AN curr_digit_value
 			IM OUTTA YR loop
 			FOUND YR result
 		IF U SAY SO
@@ -76,7 +60,7 @@ HAI 1.4
 	
 	BTW binds sockets
 	command_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
-	data_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 0 MKAY
+	
 	
 	BTW ------------- substring (last index not inclusive) tested OK
 	HOW IZ I substring YR string AN YR start AN YR end
@@ -133,19 +117,24 @@ HAI 1.4
 	BTW ------------- send a reply on the command socket
 	HOW IZ I send_command YR reply
 		I IZ send YR reply AN YR command_socket AN YR command_connection MKAY
+		VISIBLE "REPLY IZ " AN reply
 	IF U SAY SO
 	BTW ------------- send a reply on the command socket
 	
 	BTW ------------- send a reply on the data socket
 	HOW IZ I send_data YR reply
+		VISIBLE "Sending data at " data_ip "::" data_port
+		I HAS A data_socket ITZ I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 0 MKAY
+		I HAS A data_connection ITZ I IZ SOCKS'Z KONN YR data_socket AN YR data_ip AN YR data_port MKAY
 		I IZ send YR reply AN YR data_socket AN YR data_connection MKAY
+		I IZ SOCKS'Z CLOSE YR data_connection MKAY
+		I IZ SOCKS'Z CLOSE YR data_socket MKAY
 	IF U SAY SO
 	BTW ------------- send a reply on the data socket
 
 	BTW ------------- send a reply on a socket
 	HOW IZ I send YR reply AN YR socket AN YR connection
 		I IZ SOCKS'Z PUT YR socket AND YR connection AN YR SMOOSH reply AN ":)" MKAY MKAY
-		VISIBLE "REPLY IZ " AN reply
 	IF U SAY SO
 	BTW ------------- send a reply on a socket
 
@@ -160,7 +149,7 @@ HAI 1.4
 				VISIBLE "FIEL " AN file AN " FOUNDNT"
 			NO WAI
 				BTW read file content and close it
-				content R I IZ STDIO'Z LUK YR open_file AN YR 10240 MKAY
+				content R I IZ STDIO'Z LUK YR open_file AN YR 102400 MKAY
 				I IZ STDIO'Z CLOSE YR open_file MKAY
 		OIC
 		FOUND YR content
@@ -204,26 +193,22 @@ BTW				reply_command R "504 WATZ TTAT"
 			OMG "PORT"
 				BTW builds the given IP (smoosh to fix stripped last :) )
 				I HAS A port_argument ITZ SMOOSH I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY AN ":)" MKAY
-			
-				I HAS A final_ip ITZ ""
+				
+				data_ip R ""
 				IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN 4
-					final_ip R SMOOSH final_ip AN I IZ tokenizer_generator YR port_argument AN YR "," AN YR i MKAY MKAY
+					data_ip R SMOOSH data_ip AN I IZ tokenizer_generator YR port_argument AN YR "," AN YR i MKAY MKAY
 					BOTH SAEM i AN 3
 					O RLY?
 						YA RLY
-						NO WAI, final_ip R SMOOSH final_ip AN "." MKAY
+						NO WAI, data_ip R SMOOSH data_ip AN "." MKAY
 					OIC
 				IM OUTTA YR loop
-				VISIBLE "IP: " AN final_ip
 				
 				BTW builds the given port from hexadecimal
 				I HAS A first_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 4 MKAY
 				I HAS A second_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 5 MKAY
 				
-				I HAS A final_port ITZ I IZ decode_hex_port YR first_port_number AN YR second_port_number MKAY
-				
-				BTW connects to the given data port
-				data_connection R I IZ SOCKS'Z KONN YR data_socket AN YR final_ip AN YR final_port MKAY
+				data_port R I IZ decode_hex_port YR first_port_number AN YR second_port_number MKAY
 							
 				I IZ send_command YR "200 IS TAT A DOOR" MKAY
 				GTFO
@@ -231,12 +216,11 @@ BTW				reply_command R "504 WATZ TTAT"
 				I HAS A list ITZ I IZ read YR "whitelist.lul" MKAY
 				list, O RLY?
 						YA RLY,
-							I IZ send_command YR "150 Opening" MKAY
+							I IZ send_command YR "150 PUTTIN MA LIST INTO YR DOOR" MKAY
 							I IZ send_data YR list MKAY
-							I IZ SOCKS'Z CLOSE YR data_connection MKAY
-							I IZ send_command YR "226 fin" MKAY
+							I IZ send_command YR "226 LIST PUTTED MKAY" MKAY
 						NO WAI,
-								I IZ send_command YR "421 O NOES MA LIST" MKAY
+							I IZ send_command YR "421 O NOES MA LIST" MKAY
 					OIC
 				GTFO
 			OMG "FEAT"
@@ -258,7 +242,16 @@ BTW				reply_command R "504 WATZ TTAT"
 				
 				GTFO
 			OMG "RETR"
-				
+				I HAS A file_name ITZ I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
+				I HAS A file ITZ I IZ read YR file_name MKAY
+				file, O RLY?
+					YA RLY,
+						I IZ send_command YR "150 PLZ OPEN FAIL" MKAY
+						I IZ send_data YR file MKAY
+						I IZ send_command YR "226 AWSOME THX" MKAY
+					NO WAI,
+						I IZ send_command YR "421 O NOES" MKAY
+				OIC
 				GTFO
 			OMG "STOR"
 				
