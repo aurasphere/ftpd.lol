@@ -1,4 +1,4 @@
-	HAI 1.4
+HAI 1.4
 	CAN HAS STDIO?
 	CAN HAS SOCKS?
 	CAN HAS STRING?
@@ -11,7 +11,7 @@
 	I HAS A incoming_command
 	I HAS A connection_open ITZ FAIL
 	
-	BTW dec-hex converter
+	BTW dec-hex converter (tested OK)
 	O HAI IM dec_hex_converter
 		BTW use string and charat
 		I HAS A hex0 ITZ "0"
@@ -48,14 +48,12 @@
 		I HAS A decE ITZ "14"
 		I HAS A decF ITZ "15"
 		
-		BTW ---- tested OK
 		HOW IZ I dec_to_hex YR number
 			I HAS A remainder
 			I HAS A result ITZ ""
 			IM IN YR loop NERFIN YR mom WILE DIFFRINT number AN SMALLR OF number AN 0
 				remainder R MOD OF number AN 16
 				I HAS A digit_var_name ITZ SMOOSH "hex" AN remainder MKAY
-				VISIBLE digit_var_name
 				result R SMOOSH ME'Z SRS digit_var_name AN result MKAY
 				number R QUOSHUNT OF number AN 16
 			IM OUTTA YR loop
@@ -78,7 +76,7 @@
 	
 	BTW binds sockets
 	command_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
-	data_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 101 MKAY
+	data_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 0 MKAY
 	
 	BTW ------------- substring (last index not inclusive) tested OK
 	HOW IZ I substring YR string AN YR start AN YR end
@@ -100,7 +98,7 @@
 	IF U SAY SO
 	BTW ------------- substring
 	
-	BTW ------------- tokenizer generator (bug: 2 consecutive tokens return FAIL) tested OK
+	BTW ------------- tokenizer generator (bug: 2 consecutive separator return FAIL) tested OK. Works only if string ends with ":)", ":(D)" or separator
 	HOW IZ I tokenizer_generator YR string AN YR separator AN YR position
 		I HAS A tokens_counter ITZ 0
 		I HAS A curr_char ITZ ""
@@ -117,11 +115,12 @@
 					BTW last token is the separator since it's not inclusive
 					last_token_end_index R i
 					BOTH SAEM tokens_counter AN position
-						O RLY?
-							YA RLY
-								FOUND YR I IZ substring YR string AN YR last_token_start_index AN YR last_token_end_index MKAY
-							NO WAI
-						OIC
+					O RLY?
+						YA RLY
+							I HAS A result ITZ I IZ substring YR string AN YR last_token_start_index AN YR last_token_end_index MKAY
+							FOUND YR result
+						NO WAI
+					OIC
 					tokens_counter R SUM OF tokens_counter AN 1
 					last_token_start_index R SUM OF last_token_end_index AN 1
 				NO WAI
@@ -170,14 +169,17 @@
 	
 	BTW ------------- decode hex port
 	HOW IZ I decode_hex_port YR first_port_number AN YR second_port_number
-		I HAS A first_hex ITZ I IZ dec_to_hex MKAY
+		I HAS A first_hex ITZ dec_hex_converter IZ dec_to_hex YR first_port_number MKAY
+		I HAS A second_hex ITZ dec_hex_converter IZ dec_to_hex YR second_port_number MKAY
+		I HAS A hex_port ITZ SMOOSH first_hex AN second_hex MKAY
+		dec_hex_converter IZ hex_to_dec YR hex_port MKAY
 	IF U SAY SO
 	BTW ------------- decode hex port
 	
 	BTW ------------- handle command
 	HOW IZ I handle_command
-		I HAS A first_token ITZ I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 0 MKAY
-		first_token, WTF?
+		I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 0 MKAY
+		WTF?
 			OMG "USER"
 				I IZ send_command YR "202 OH HAI ANON" MKAY
 				GTFO
@@ -200,9 +202,10 @@ BTW				reply_command R "504 WATZ TTAT"
 				I IZ send_command YR "200 OH YA SENDIN PICS, COOL" MKAY
 				GTFO
 			OMG "PORT"
-				BTW builds the given IP
-				I HAS A port_argument ITZ I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
-				I HAS A final_ip
+				BTW builds the given IP (smoosh to fix stripped last :) )
+				I HAS A port_argument ITZ SMOOSH I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY AN ":)" MKAY
+			
+				I HAS A final_ip ITZ ""
 				IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN 4
 					final_ip R SMOOSH final_ip AN I IZ tokenizer_generator YR port_argument AN YR "," AN YR i MKAY MKAY
 					BOTH SAEM i AN 3
@@ -211,6 +214,7 @@ BTW				reply_command R "504 WATZ TTAT"
 						NO WAI, final_ip R SMOOSH final_ip AN "." MKAY
 					OIC
 				IM OUTTA YR loop
+				VISIBLE "IP: " AN final_ip
 				
 				BTW builds the given port from hexadecimal
 				I HAS A first_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 4 MKAY
@@ -219,7 +223,7 @@ BTW				reply_command R "504 WATZ TTAT"
 				I HAS A final_port ITZ I IZ decode_hex_port YR first_port_number AN YR second_port_number MKAY
 				
 				BTW connects to the given data port
-				data_connection R I IZ SOCS'Z KONN YR data_socket AN YR final_ip AN YR final_port MKAY
+				data_connection R I IZ SOCKS'Z KONN YR data_socket AN YR final_ip AN YR final_port MKAY
 							
 				I IZ send_command YR "200 IS TAT A DOOR" MKAY
 				GTFO
@@ -229,6 +233,7 @@ BTW				reply_command R "504 WATZ TTAT"
 						YA RLY,
 							I IZ send_command YR "150 Opening" MKAY
 							I IZ send_data YR list MKAY
+							I IZ SOCKS'Z CLOSE YR data_connection MKAY
 							I IZ send_command YR "226 fin" MKAY
 						NO WAI,
 								I IZ send_command YR "421 O NOES MA LIST" MKAY
@@ -267,10 +272,7 @@ BTW				reply_command R "504 WATZ TTAT"
 		OIC
 	IF U SAY SO
 	BTW ------------- handle command
-	
-	dec_hex_converter IZ hex_to_dec YR "FE" MKAY
-	VISIBLE IT
-	
+
 	BTW connection loop
 	IM IN YR connection_loop
 	
