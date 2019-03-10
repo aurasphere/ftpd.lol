@@ -1,16 +1,84 @@
-HAI 1.4
+	HAI 1.4
 	CAN HAS STDIO?
 	CAN HAS SOCKS?
 	CAN HAS STRING?
 	
 	BTW variables
-	I HAS A sock
-	I HAS A conn
+	I HAS A command_socket
+	I HAS A command_connection
+	I HAS A data_socket
+	I HAS A data_connection
 	I HAS A incoming_command
 	I HAS A connection_open ITZ FAIL
 	
-	BTW binds a socket
-	sock R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
+	BTW dec-hex converter
+	O HAI IM dec_hex_converter
+		BTW use string and charat
+		I HAS A hex0 ITZ "0"
+		I HAS A hex1 ITZ "1"
+		I HAS A hex2 ITZ "2"
+		I HAS A hex3 ITZ "3"
+		I HAS A hex4 ITZ "4"
+		I HAS A hex5 ITZ "5"
+		I HAS A hex6 ITZ "6"
+		I HAS A hex7 ITZ "7"
+		I HAS A hex8 ITZ "8"
+		I HAS A hex9 ITZ "9"
+		I HAS A hex10 ITZ "A"
+		I HAS A hex11 ITZ "B"
+		I HAS A hex12 ITZ "C"
+		I HAS A hex13 ITZ "D"
+		I HAS A hex14 ITZ "E"
+		I HAS A hex15 ITZ "F"
+		
+		I HAS A dec0 ITZ "0"
+		I HAS A dec1 ITZ "1"
+		I HAS A dec2 ITZ "2"
+		I HAS A dec3 ITZ "3"
+		I HAS A dec4 ITZ "4"
+		I HAS A dec5 ITZ "5"
+		I HAS A dec6 ITZ "6"
+		I HAS A dec7 ITZ "7"
+		I HAS A dec8 ITZ "8"
+		I HAS A dec9 ITZ "9"
+		I HAS A decA ITZ "10"
+		I HAS A decB ITZ "11"
+		I HAS A decC ITZ "12"
+		I HAS A decD ITZ "13"
+		I HAS A decE ITZ "14"
+		I HAS A decF ITZ "15"
+		
+		BTW ---- tested OK
+		HOW IZ I dec_to_hex YR number
+			I HAS A remainder
+			I HAS A result ITZ ""
+			IM IN YR loop NERFIN YR mom WILE DIFFRINT number AN SMALLR OF number AN 0
+				remainder R MOD OF number AN 16
+				I HAS A digit_var_name ITZ SMOOSH "hex" AN remainder MKAY
+				VISIBLE digit_var_name
+				result R SMOOSH ME'Z SRS digit_var_name AN result MKAY
+				number R QUOSHUNT OF number AN 16
+			IM OUTTA YR loop
+			FOUND YR result
+		IF U SAY SO
+		
+		HOW IZ I hex_to_dec YR number
+			I HAS A num_length ITZ I IZ STRING'Z LEN YR number MKAY
+			I HAS A curr_digit
+			I HAS A result ITZ 0
+			IM IN YR loop UPPIN YR i WILE DIFFRINT i AN BIGGR OF i AN num_length
+				curr_digit R I IZ STRING'Z AT YR number AN YR i MKAY
+				I HAS A digit_var_name ITZ SMOOSH "dec" AN curr_digit MKAY
+				result R SUM OF PRODUKT OF 16 AN result AN ME'Z SRS digit_var_name
+			IM OUTTA YR loop
+			FOUND YR result
+		IF U SAY SO
+	
+	KTHX
+	
+	BTW binds sockets
+	command_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
+	data_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 101 MKAY
 	
 	BTW ------------- substring (last index not inclusive) tested OK
 	HOW IZ I substring YR string AN YR start AN YR end
@@ -28,14 +96,12 @@ HAI 1.4
 					result R SMOOSH result AN curr_char MKAY
 			OIC
 		IM OUTTA YR loop
-		VISIBLE "substring [" AN string AN "] " AN start AN " - " AN end AN " = " result
 		FOUND YR result
 	IF U SAY SO
 	BTW ------------- substring
 	
 	BTW ------------- tokenizer generator (bug: 2 consecutive tokens return FAIL) tested OK
 	HOW IZ I tokenizer_generator YR string AN YR separator AN YR position
-		VISIBLE "position " AN position
 		I HAS A tokens_counter ITZ 0
 		I HAS A curr_char ITZ ""
 		I HAS A last_token_start_index ITZ 0
@@ -65,48 +131,25 @@ HAI 1.4
 	IF U SAY SO
 	BTW ------------- tokenizer generator
 	
-	OBTW ------------- tokenizer TODO: use generator instead
-	HOW IZ I tokenize YR string AN YR separator
-		I HAS A result ITZ A BUKKIT
-		I HAS A zero ITZ 1
-		I HAS A tokens_counter ITZ 1
-		I HAS A curr_char ITZ ""
-		I HAS A curr_token ITZ ""
-		I HAS A str_length ITZ I IZ STRING'Z LEN YR string MKAY
-		IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN str_length  
-			curr_char R I IZ STRING'Z AT YR string AN YR i MKAY
-			
-			BTW can't use WTF? since separator isn't a literal
-			BOTH SAEM curr_char AN separator
-			O RLY?
-				YA RLY
-					BTW new token found, add to the bukkit
-					tokens_counter R SUM OF tokens_counter AN 1
-					result HAS A  ITZ curr_token
-					curr_token R ""
-				BTW last character is unicode for /r
-				MEBBE ANY OF BOTH SAEM curr_char AN ":)" AN BOTH SAEM curr_char AN ":(D)" MKAY
-					BTW last token
-					tokens_counter R SUM OF tokens_counter AN 1
-					result HAS A ":{tokens_counter}" ITZ curr_token
-					result HAS A "0" ITZ tokens_counter
-					FOUND YR result
-				NO WAI 
-					BTW normal character, add to the current token
-					curr_token R SMOOSH curr_token AN curr_char MKAY	
-			OIC
-			
-		IM OUTTA YR loop
-		
-		BTW last token
-		tokens_counter R SUM OF tokens_counter AN 1
-		result HAS A ":{tokens_counter}" ITZ curr_token
-		result HAS A "0" ITZ tokens_counter
-		
-		FOUND YR result
+	BTW ------------- send a reply on the command socket
+	HOW IZ I send_command YR reply
+		I IZ send YR reply AN YR command_socket AN YR command_connection MKAY
 	IF U SAY SO
-	 ------------- tokenizer
-	TLDR
+	BTW ------------- send a reply on the command socket
+	
+	BTW ------------- send a reply on the data socket
+	HOW IZ I send_data YR reply
+		I IZ send YR reply AN YR data_socket AN YR data_connection MKAY
+	IF U SAY SO
+	BTW ------------- send a reply on the data socket
+
+	BTW ------------- send a reply on a socket
+	HOW IZ I send YR reply AN YR socket AN YR connection
+		I IZ SOCKS'Z PUT YR socket AND YR connection AN YR SMOOSH reply AN ":)" MKAY MKAY
+		VISIBLE "REPLY IZ " AN reply
+	IF U SAY SO
+	BTW ------------- send a reply on a socket
+
 	BTW ------------- reads a file and returns content
 	HOW IZ I read YR file
 		I HAS A content ITZ ""
@@ -125,71 +168,83 @@ HAI 1.4
 	IF U SAY SO
 	BTW ------------- reads a file and returns content
 	
-	BTW ------------- gets first token, TESTED OK TODO: tokenizza invece e torna un BUKKIT (considera 1 elemento contiene lunghezza array se lenght non disponibile
-	HOW IZ I get_first_token YR command
-		I HAS A char
-		I HAS A first_token ITZ ""
-		I HAS A i ITZ 0
-		I HAS A str_length ITZ I IZ STRING'Z LEN YR command MKAY
-		IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN str_length  
-			char R I IZ STRING'Z AT YR command AN YR i MKAY
-			ANY OF BOTH SAEM char AN " " AN BOTH SAEM char AN ":)" AN BOTH SAEM char AN ":(D)" MKAY, O RLY?
-				YA RLY, FOUND YR first_token
-				NO WAI, first_token R SMOOSH first_token AN char MKAY
-			OIC
-		IM OUTTA YR loop
-		FOUND YR first_token
+	BTW ------------- decode hex port
+	HOW IZ I decode_hex_port YR first_port_number AN YR second_port_number
+		I HAS A first_hex ITZ I IZ dec_to_hex MKAY
 	IF U SAY SO
-	BTW ------------- gets first token
+	BTW ------------- decode hex port
 	
-	BTW ------------- builds replies
-	HOW IZ I reply
-		I HAS A reply_command
-		I HAS A first_token ITZ I IZ get_first_token YR incoming_command MKAY
+	BTW ------------- handle command
+	HOW IZ I handle_command
+		I HAS A first_token ITZ I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 0 MKAY
 		first_token, WTF?
 			OMG "USER"
-				reply_command R "202 OH HAI ANON"
+				I IZ send_command YR "202 OH HAI ANON" MKAY
 				GTFO
 			OMG "PASS"
-				reply_command R "202 NAH ITZ OKAI"
+				I IZ send_command YR "202 NAH ITZ OKAI" MKAY
 				GTFO
 			OMG "PASV"
-				reply_command R "227 I GONNA DO IT"
+				I IZ send_command YR "227 I GONNA DO IT" MKAY
 				GTFO
 			OMG "PWD"
-				reply_command R "257 :"/LUL:" GOTCHA YR FOLDR"
+				I IZ send_command YR "257 :"/LUL:" GOTCHA YR FOLDR" MKAY
 				GTFO
 			OMG "QUIT"
 				connection_open R FAIL
-				reply_command R "221 BUH-BYE"
+				I IZ send_command YR "221 BUH-BYE" MKAY
 				GTFO
 			OMG "TYPE"
 				BTW todo check type, currently I
 BTW				reply_command R "504 WATZ TTAT"
-				reply_command R "200 OH YA SENDIN PICS, COOL"
+				I IZ send_command YR "200 OH YA SENDIN PICS, COOL" MKAY
 				GTFO
 			OMG "PORT"
-				reply_command R "200 IS TAT A DOOR"
+				BTW builds the given IP
+				I HAS A port_argument ITZ I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
+				I HAS A final_ip
+				IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN 4
+					final_ip R SMOOSH final_ip AN I IZ tokenizer_generator YR port_argument AN YR "," AN YR i MKAY MKAY
+					BOTH SAEM i AN 3
+					O RLY?
+						YA RLY
+						NO WAI, final_ip R SMOOSH final_ip AN "." MKAY
+					OIC
+				IM OUTTA YR loop
+				
+				BTW builds the given port from hexadecimal
+				I HAS A first_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 4 MKAY
+				I HAS A second_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 5 MKAY
+				
+				I HAS A final_port ITZ I IZ decode_hex_port YR first_port_number AN YR second_port_number MKAY
+				
+				BTW connects to the given data port
+				data_connection R I IZ SOCS'Z KONN YR data_socket AN YR final_ip AN YR final_port MKAY
+							
+				I IZ send_command YR "200 IS TAT A DOOR" MKAY
 				GTFO
 			OMG "LIST"
 				I HAS A list ITZ I IZ read YR "whitelist.lul" MKAY
-				VISIBLE "MA LIST " AN list
 				list, O RLY?
-						YA RLY,reply_command R SMOOSH "150 Opening:)" AN list AN ":)226 fin" MKAY
-						NO WAI,reply_command R "421 O NOES MA LIST"
+						YA RLY,
+							I IZ send_command YR "150 Opening" MKAY
+							I IZ send_data YR list MKAY
+							I IZ send_command YR "226 fin" MKAY
+						NO WAI,
+								I IZ send_command YR "421 O NOES MA LIST" MKAY
 					OIC
 				GTFO
 			OMG "FEAT"
-				reply_command R "502 WAT"
+				I IZ send_command YR "502 WAT" MKAY
 				GTFO
 			OMG "SYST"
-				reply_command R "215 LOL I AM"
+				I IZ send_command YR "215 LOL I AM" MKAY
 				GTFO
 			OMG "CWD"
-				reply_command R "250 WERE U GOIN"
+				I IZ send_command YR "250 WERE U GOIN" MKAY
 				GTFO
 			OMG "REST"
-				reply_command R "350 WATCHA WAITIN FOR"
+				I IZ send_command YR "350 WATCHA WAITIN FOR" MKAY
 				GTFO
 			OMG "MODE"
 				
@@ -204,59 +259,43 @@ BTW				reply_command R "504 WATZ TTAT"
 				
 				GTFO
 			OMG "NOOP"
-				reply_command R "200 YA SLEEPN?"
+				I IZ send_command YR "200 YA SLEEPN?" MKAY
 				GTFO
 			OMGWTF
-				reply_command R "502 WAT"
+				I IZ send_command YR "502 WAT" MKAY
 				GTFO
 		OIC
-		FOUND YR reply_command
 	IF U SAY SO
-	BTW ------------- builds replies
+	BTW ------------- handle command
+	
+	dec_hex_converter IZ hex_to_dec YR "FE" MKAY
+	VISIBLE IT
 	
 	BTW connection loop
 	IM IN YR connection_loop
 	
-		OBTW ----------------
-		I HAS A test
-		IM IN YR loop UPPIN YR i
-			VISIBLE "test"
-			test R I IZ tokenizer_generator YR "192,168,1,299,39,23:)" AN YR "," AN YR i MKAY
-			test, O RLY?
-				YA RLY, VISIBLE test AN ":)"
-				NO WAI, GTFO
-			OIC
-		IM OUTTA YR loop
-		BTW ----------------
-		TLDR
-	
 		BTW listens for a connection
-		conn R I IZ SOCKS'Z LISTN YR sock MKAY
+		command_connection R I IZ SOCKS'Z LISTN YR command_socket MKAY
 		
 		BTW welcome message
-		I IZ SOCKS'Z PUT YR sock AN YR conn AN YR "220 TIS WORKIN? U LISTENIN?:)" MKAY
-		VISIBLE "220 TIS WORKIN? U LISTENIN?"
+		I IZ send_command YR "220 TIS WORKIN? U LISTENIN?:)" MKAY
 		connection_open R WIN
 		
 		IM IN YR session_loop NERFIN YR mom TIL NOT connection_open
 
-			BTW reads the next command
-			incoming_command R I IZ SOCKS'Z GET YR sock AN YR conn AN YR 1024 MKAY
+			BTW reads the next command and reply
+			incoming_command R I IZ SOCKS'Z GET YR command_socket AN YR command_connection AN YR 1024 MKAY
 			VISIBLE "CMD IZ " AN incoming_command
-		
-			BTW reply
-			I HAS A reply_command ITZ I IZ reply MKAY
-			I IZ SOCKS'Z PUT YR sock AND YR conn AN YR SMOOSH reply_command AN ":)" MKAY MKAY
-			VISIBLE "REPLY IZ " AN reply_command
+			I IZ handle_command MKAY
 	
 		IM OUTTA YR session_loop
 		
 		BTW closes the connection
-		I IZ SOCKS'Z CLOSE YR conn MKAY
+		I IZ SOCKS'Z CLOSE YR command_connection MKAY
 		
 	IM OUTTA YR connection_loop
 	
 	BTW closes the socket
-    I IZ SOCKS'Z CLOSE YR sock MKAY
+    I IZ SOCKS'Z CLOSE YR command_socket MKAY
 	
 KTHXBYE
