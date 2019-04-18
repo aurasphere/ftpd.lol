@@ -6,7 +6,7 @@ To run it you first have to compile and install the [LOLCODE lci compiler](https
 
 Once installed, the server can be run with the command:
 
-  sudo lci ftpd.lol
+    sudo lci ftpd.lol
 
 ## Features
 In order to be considered a valid minimum implementation, this program supports the following features:
