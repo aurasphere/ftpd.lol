@@ -8,6 +8,8 @@ Once installed, the server can be run with the command:
 
     sudo lci ftpd.lol
 
+A shell script is provided to generate the file whitelist (read the limitations section for more info). 
+
 ## Features
 In order to be considered a valid minimum implementation, this program supports the following features:
 
@@ -55,6 +57,9 @@ Apart from the minimum implementation features, the following commands are also 
  
  ## Tests
  This code has been tested using [WinSCP](https://winscp.net/eng/download.php) FTP client. Other clients may not work (and probably won't).
+ 
+ ## Contributing
+ Open an issue for questions, comments and so forth but keep in mind that I won't probably add any new features to this project.
  
  # KTHXBYE
 
