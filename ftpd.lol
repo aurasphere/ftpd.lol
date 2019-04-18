@@ -3,15 +3,18 @@ HAI 1.4
 	CAN HAS SOCKS?
 	CAN HAS STRING?
 	
-	BTW variables
+	
+	BTW global variables
+	
 	I HAS A command_socket
 	I HAS A command_connection
 	I HAS A data_ip ITZ ""
 	I HAS A data_port
-	I HAS A incoming_command
 	I HAS A connection_open ITZ FAIL
 	
-	BTW dec-hex converter
+	
+	BTW libraries
+	
 	O HAI IM dec_hex_converter
 
 		HOW IZ I dec_to_hex YR number
@@ -58,145 +61,225 @@ HAI 1.4
 	
 	KTHX
 	
-	BTW binds sockets
-	command_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
+	O HAI IM strings_utilz
 	
+		BTW last index not inclusive
+		HOW IZ I substring YR string AN YR start AN YR end
+			I HAS A cursor ITZ start
+			I HAS A result ITZ ""
+			I HAS A curr_char ITZ ""
+			
+			BTW assuming parameters are correct
+			IM IN YR loop UPPIN YR cursor TIL BOTH SAEM cursor AN end
+				DIFFRINT cursor AN BIGGR OF cursor AN start
+				O RLY?
+					YA RLY
+					NO WAI,
+						curr_char R I IZ STRING'Z AT YR string AN YR cursor MKAY
+						result R SMOOSH result AN curr_char MKAY
+				OIC
+			IM OUTTA YR loop
+			FOUND YR result
+		IF U SAY SO
+
+		BTW acts as a generator of tokens by returning the token at the given position on the given string using the given separator. There's a known bug: 2 consecutive separator in the string will return FAIL. Works only if string ends with ":)", ":(D)" or separator
+		HOW IZ I tokenizer_generator YR string AN YR separator AN YR position
+			I HAS A tokens_counter ITZ 0
+			I HAS A curr_char ITZ ""
+			I HAS A last_token_start_index ITZ 0
+			I HAS A last_token_end_index ITZ 0
+			I HAS A str_length ITZ I IZ STRING'Z LEN YR string MKAY
+			
+			BTW position to the current token 
+			IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN str_length
+				curr_char R I IZ STRING'Z AT YR string AN YR i MKAY
+				ANY OF BOTH SAEM curr_char AN ":)" AN BOTH SAEM curr_char AN ":(D)" AN BOTH SAEM curr_char AN separator MKAY
+				O RLY?
+					YA RLY
+						BTW last token is the separator since it's not inclusive
+						last_token_end_index R i
+						BOTH SAEM tokens_counter AN position
+						O RLY?
+							YA RLY
+								I HAS A result ITZ strings_utilz IZ substring YR string AN YR last_token_start_index AN YR last_token_end_index MKAY
+								FOUND YR result
+							NO WAI
+						OIC
+						tokens_counter R SUM OF tokens_counter AN 1
+						last_token_start_index R SUM OF last_token_end_index AN 1
+					NO WAI
+				OIC
+			IM OUTTA YR loop
+			FOUND YR FAIL
+		IF U SAY SO
 	
-	BTW ------------- substring (last index not inclusive) tested OK
-	HOW IZ I substring YR string AN YR start AN YR end
-		I HAS A cursor ITZ start
-		I HAS A result ITZ ""
-		I HAS A curr_char ITZ ""
+	KTHX
+	
+	O HAI IM socks_utilz
+	
+		BTW binds sockets
+		command_socket R I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 21 MKAY
 		
-		BTW assuming parameters are correct for the moment
-		IM IN YR loop UPPIN YR cursor TIL BOTH SAEM cursor AN end
-			DIFFRINT cursor AN BIGGR OF cursor AN start
+		BTW sends a reply on the command socket
+		HOW IZ I send_command YR reply
+			socks_utilz IZ send YR reply AN YR command_socket AN YR command_connection MKAY
+			VISIBLE "REPLY IZ " AN reply
+		IF U SAY SO
+		
+		BTW sends a reply on the data socket
+		HOW IZ I send_data YR reply
+			I HAS A data_socket ITZ I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 0 MKAY
+			I HAS A data_connection ITZ I IZ SOCKS'Z KONN YR data_socket AN YR data_ip AN YR data_port MKAY
+			socks_utilz IZ send YR reply AN YR data_socket AN YR data_connection MKAY
+			I IZ SOCKS'Z CLOSE YR data_connection MKAY
+			I IZ SOCKS'Z CLOSE YR data_socket MKAY
+		IF U SAY SO
+	
+		BTW reads a reply on the data socket
+		HOW IZ I read_data
+			I HAS A data_socket ITZ I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 0 MKAY
+			I HAS A data_connection ITZ I IZ SOCKS'Z KONN YR data_socket AN YR data_ip AN YR data_port MKAY
+			I HAS A incoming_data ITZ I IZ SOCKS'Z GET YR data_socket AND YR data_connection AN YR 102400 MKAY
+			I IZ SOCKS'Z CLOSE YR data_connection MKAY
+			I IZ SOCKS'Z CLOSE YR data_socket MKAY
+			FOUND YR incoming_data
+		IF U SAY SO
+		
+		BTW send a reply on a socket
+		HOW IZ I send YR reply AN YR socket AN YR connection
+			I IZ SOCKS'Z PUT YR socket AND YR connection AN YR SMOOSH reply AN ":)" MKAY MKAY
+		IF U SAY SO
+	
+	KTHX
+
+	O HAI IM file_utilz
+
+		BTW reads a file and returns its content
+		HOW IZ I read YR file
+			I HAS A content ITZ ""
+			I HAS A open_file ITZ I IZ STDIO'Z OPEN YR file AN YR "r" MKAY
+			I IZ STDIO'Z DIAF YR open_file MKAY
 			O RLY?
 				YA RLY
-				NO WAI,
-					curr_char R I IZ STRING'Z AT YR string AN YR cursor MKAY
-					result R SMOOSH result AN curr_char MKAY
-			OIC
-		IM OUTTA YR loop
-		FOUND YR result
-	IF U SAY SO
-	BTW ------------- substring
-	
-	BTW ------------- tokenizer generator (bug: 2 consecutive separator return FAIL) tested OK. Works only if string ends with ":)", ":(D)" or separator
-	HOW IZ I tokenizer_generator YR string AN YR separator AN YR position
-		I HAS A tokens_counter ITZ 0
-		I HAS A curr_char ITZ ""
-		I HAS A last_token_start_index ITZ 0
-		I HAS A last_token_end_index ITZ 0
-		I HAS A str_length ITZ I IZ STRING'Z LEN YR string MKAY
-		
-		BTW position to the current token 
-		IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN str_length
-			curr_char R I IZ STRING'Z AT YR string AN YR i MKAY
-			ANY OF BOTH SAEM curr_char AN ":)" AN BOTH SAEM curr_char AN ":(D)" AN BOTH SAEM curr_char AN separator MKAY
-			O RLY?
-				YA RLY
-					BTW last token is the separator since it's not inclusive
-					last_token_end_index R i
-					BOTH SAEM tokens_counter AN position
-					O RLY?
-						YA RLY
-							I HAS A result ITZ I IZ substring YR string AN YR last_token_start_index AN YR last_token_end_index MKAY
-							FOUND YR result
-						NO WAI
-					OIC
-					tokens_counter R SUM OF tokens_counter AN 1
-					last_token_start_index R SUM OF last_token_end_index AN 1
+					BTW error
+					VISIBLE "FIEL " AN file AN " FOUNDNT"
 				NO WAI
+					BTW read file content and close it
+					content R I IZ STDIO'Z LUK YR open_file AN YR 102400 MKAY
+					I IZ STDIO'Z CLOSE YR open_file MKAY
 			OIC
-		IM OUTTA YR loop
-		FOUND YR FAIL
-	IF U SAY SO
-	BTW ------------- tokenizer generator
-	
-	BTW ------------- send a reply on the command socket
-	HOW IZ I send_command YR reply
-		I IZ send YR reply AN YR command_socket AN YR command_connection MKAY
-		VISIBLE "REPLY IZ " AN reply
-	IF U SAY SO
-	BTW ------------- send a reply on the command socket
-	
-	BTW ------------- send a reply on the data socket
-	HOW IZ I send_data YR reply
-		VISIBLE "Sending data at " data_ip "::" data_port
-		I HAS A data_socket ITZ I IZ SOCKS'Z BIND YR "0.0.0.0" AN YR 0 MKAY
-		I HAS A data_connection ITZ I IZ SOCKS'Z KONN YR data_socket AN YR data_ip AN YR data_port MKAY
-		I IZ send YR reply AN YR data_socket AN YR data_connection MKAY
-		I IZ SOCKS'Z CLOSE YR data_connection MKAY
-		I IZ SOCKS'Z CLOSE YR data_socket MKAY
-	IF U SAY SO
-	BTW ------------- send a reply on the data socket
+			FOUND YR content
+		IF U SAY SO
+		
+		BTW writes on a file with the given permissions
+		HOW IZ I write_file YR file_name AN YR file_content AN YR permission
+			I HAS A file ITZ I IZ STDIO'Z OPEN YR file_name AN YR permission MKAY
+			I IZ STDIO'Z SCRIBBEL YR file AN YR file_content MKAY
+			I IZ STDIO'Z CLOSE YR file MKAY
+		IF U SAY SO
 
-	BTW ------------- send a reply on a socket
-	HOW IZ I send YR reply AN YR socket AN YR connection
-		I IZ SOCKS'Z PUT YR socket AND YR connection AN YR SMOOSH reply AN ":)" MKAY MKAY
-	IF U SAY SO
-	BTW ------------- send a reply on a socket
+	KTHX
+	
+	O HAI IM ftp_utilz
+	
+		BTW decodes an FTP PORT command
+		HOW IZ I decode_hex_port YR first_port_number AN YR second_port_number
+			I HAS A first_hex ITZ dec_hex_converter IZ dec_to_hex YR first_port_number MKAY
+			I HAS A second_hex ITZ dec_hex_converter IZ dec_to_hex YR second_port_number MKAY
+			I HAS A hex_port ITZ SMOOSH first_hex AN second_hex MKAY
+			dec_hex_converter IZ hex_to_dec YR hex_port MKAY
+		IF U SAY SO
+		
+		BTW stores an FTP file
+		HOW IZ I store_file YR incoming_command AN YR permission
+			
+			BTW gets the file name
+			I HAS A file_name ITZ strings_utilz IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
+			I HAS A current_token
+			IM IN YR loop UPPIN YR i
+			
+				BTW skips the first tokens
+				DIFFRINT i AN BIGGR OF i AN 2
+				O RLY?
+					YA RLY
+					NO WAI,
+						BTW adds the next token to the string if present or stops
+						current_token R strings_utilz IZ tokenizer_generator YR incoming_command AN YR " " AN YR i MKAY
+						
+						current_token, O RLY?
+							YA RLY,
+								file_name R SMOOSH file_name AN " " AN current_token MKAY
+							NO WAI,
+								GTFO
+						OIC
+					OIC	
+			IM OUTTA YR loop
+			
+			BTW stores the actual file
+			socks_utilz IZ send_command YR "150 CAN HAS FIEL?" MKAY
+			I HAS A content ITZ socks_utilz IZ read_data MKAY
+			file_utilz IZ write_file YR file_name AN YR content AN YR permission MKAY
+			socks_utilz IZ send_command YR "226 AWSOME THX" MKAY
+		IF U SAY SO
+		
+		BTW returns the first message if the first parameter is the same allowed, otherwise returns the second one
+		HOW IZ I allow_only YR valid_parameter AN YR incoming_command AN YR message_ok AN YR message_ko
+			I HAS A actual_parameter ITZ strings_utilz IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
+				BOTH SAEM actual_parameter AN valid_parameter
+				O RLY?
+					YA RLY,
+						socks_utilz IZ send_command YR message_ok MKAY
+						GTFO
+					NO WAI,
+						socks_utilz IZ send_command YR message_ko MKAY
+						GTFO
+				OIC
+		IF U SAY SO
+		
+		BTW lists files in the main directory
+		HOW IZ I list_files
+			I HAS A list ITZ file_utilz IZ read YR "whitelist.lul" MKAY
+			list, O RLY?
+				YA RLY,
+					socks_utilz IZ send_command YR "150 PUTTIN MA LIST INTO YR DOOR" MKAY
+					socks_utilz IZ send_data YR list MKAY
+					socks_utilz IZ send_command YR "226 LIST PUTTED MKAY" MKAY
+				NO WAI,
+					socks_utilz IZ send_command YR "421 O NOES MA LIST" MKAY
+				OIC
+		IF U SAY SO
+		
+	KTHX
+	
 
-	BTW ------------- reads a file and returns content
-	HOW IZ I read YR file
-		I HAS A content ITZ ""
-		I HAS A open_file ITZ I IZ STDIO'Z OPEN YR file AN YR "r" MKAY
-		I IZ STDIO'Z DIAF YR open_file MKAY
-		O RLY?
-			YA RLY
-				BTW error
-				VISIBLE "FIEL " AN file AN " FOUNDNT"
-			NO WAI
-				BTW read file content and close it
-				content R I IZ STDIO'Z LUK YR open_file AN YR 102400 MKAY
-				I IZ STDIO'Z CLOSE YR open_file MKAY
-		OIC
-		FOUND YR content
-	IF U SAY SO
-	BTW ------------- reads a file and returns content
+	BTW command handler
 	
-	BTW ------------- decode hex port
-	HOW IZ I decode_hex_port YR first_port_number AN YR second_port_number
-		I HAS A first_hex ITZ dec_hex_converter IZ dec_to_hex YR first_port_number MKAY
-		I HAS A second_hex ITZ dec_hex_converter IZ dec_to_hex YR second_port_number MKAY
-		I HAS A hex_port ITZ SMOOSH first_hex AN second_hex MKAY
-		dec_hex_converter IZ hex_to_dec YR hex_port MKAY
-	IF U SAY SO
-	BTW ------------- decode hex port
-	
-	BTW ------------- handle command
-	HOW IZ I handle_command
-		I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 0 MKAY
+	HOW IZ I handle_command YR incoming_command
+		strings_utilz IZ tokenizer_generator YR incoming_command AN YR " " AN YR 0 MKAY
 		WTF?
-			OMG "USER"
-				I IZ send_command YR "202 OH HAI ANON" MKAY
-				GTFO
-			OMG "PASS"
-				I IZ send_command YR "202 NAH ITZ OKAI" MKAY
-				GTFO
-			OMG "PASV"
-				I IZ send_command YR "227 I GONNA DO IT" MKAY
-				GTFO
-			OMG "PWD"
-				I IZ send_command YR "257 :"/LUL:" GOTCHA YR FOLDR" MKAY
-				GTFO
 			OMG "QUIT"
 				connection_open R FAIL
-				I IZ send_command YR "221 BUH-BYE" MKAY
+				socks_utilz IZ send_command YR "221 BUH-BYE" MKAY
 				GTFO
-			OMG "TYPE"
-				BTW todo check type, currently I
-BTW				reply_command R "504 WATZ TTAT"
-				I IZ send_command YR "200 OH YA SENDIN PICS, COOL" MKAY
+			OMG "RETR"
+				I HAS A file_name ITZ strings_utilz IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
+				I HAS A file ITZ file_utilz IZ read YR file_name MKAY
+				file, O RLY?
+					YA RLY,
+						socks_utilz IZ send_command YR "150 CAN HAS FIEL?" MKAY
+						socks_utilz IZ send_data YR file MKAY
+						socks_utilz IZ send_command YR "226 AWSOME THX" MKAY
+					NO WAI,
+						socks_utilz IZ send_command YR "421 O NOES" MKAY
+				OIC
 				GTFO
 			OMG "PORT"
 				BTW builds the given IP (smoosh to fix stripped last :) )
-				I HAS A port_argument ITZ SMOOSH I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY AN ":)" MKAY
+				I HAS A port_argument ITZ SMOOSH strings_utilz IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY AN ":)" MKAY
 				
 				data_ip R ""
 				IM IN YR loop UPPIN YR i TIL BOTH SAEM i AN 4
-					data_ip R SMOOSH data_ip AN I IZ tokenizer_generator YR port_argument AN YR "," AN YR i MKAY MKAY
+					data_ip R SMOOSH data_ip AN strings_utilz IZ tokenizer_generator YR port_argument AN YR "," AN YR i MKAY MKAY
 					BOTH SAEM i AN 3
 					O RLY?
 						YA RLY
@@ -205,83 +288,140 @@ BTW				reply_command R "504 WATZ TTAT"
 				IM OUTTA YR loop
 				
 				BTW builds the given port from hexadecimal
-				I HAS A first_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 4 MKAY
-				I HAS A second_port_number ITZ I IZ tokenizer_generator YR port_argument AN YR "," AN YR 5 MKAY
+				I HAS A first_port_number ITZ strings_utilz IZ tokenizer_generator YR port_argument AN YR "," AN YR 4 MKAY
+				I HAS A second_port_number ITZ strings_utilz IZ tokenizer_generator YR port_argument AN YR "," AN YR 5 MKAY
 				
-				data_port R I IZ decode_hex_port YR first_port_number AN YR second_port_number MKAY
+				data_port R ftp_utilz IZ decode_hex_port YR first_port_number AN YR second_port_number MKAY
 							
-				I IZ send_command YR "200 IS TAT A DOOR" MKAY
+				socks_utilz IZ send_command YR "200 IS TAT A DOOR" MKAY
 				GTFO
-			OMG "LIST"
-				I HAS A list ITZ I IZ read YR "whitelist.lul" MKAY
-				list, O RLY?
-						YA RLY,
-							I IZ send_command YR "150 PUTTIN MA LIST INTO YR DOOR" MKAY
-							I IZ send_data YR list MKAY
-							I IZ send_command YR "226 LIST PUTTED MKAY" MKAY
-						NO WAI,
-							I IZ send_command YR "421 O NOES MA LIST" MKAY
-					OIC
-				GTFO
-			OMG "FEAT"
-				I IZ send_command YR "502 WAT" MKAY
-				GTFO
-			OMG "SYST"
-				I IZ send_command YR "215 LOL I AM" MKAY
-				GTFO
-			OMG "CWD"
-				I IZ send_command YR "250 WERE U GOIN" MKAY
-				GTFO
-			OMG "REST"
-				I IZ send_command YR "350 WATCHA WAITIN FOR" MKAY
+			OMG "TYPE"
+				BTW only ASCII allowed
+				ftp_utilz IZ allow_only YR "A" AN YR incoming_command AN YR "200 OH YA SENDIN LETTERZ, COOL" AN YR "504 PLZ SEND LETTERZ" MKAY
 				GTFO
 			OMG "MODE"
-				
+				BTW only STREAM allowed
+				ftp_utilz IZ allow_only YR "S" AN YR incoming_command AN YR "200 OIC ITZ LIEK WATER" AN YR "504 TAT A BRICK?" MKAY
 				GTFO
-			OMG "STRU"
-				
+			OMG "LIST"
+				ftp_utilz IZ list_files MKAY
 				GTFO
-			OMG "RETR"
-				I HAS A file_name ITZ I IZ tokenizer_generator YR incoming_command AN YR " " AN YR 1 MKAY
-				I HAS A file ITZ I IZ read YR file_name MKAY
-				file, O RLY?
-					YA RLY,
-						I IZ send_command YR "150 PLZ OPEN FAIL" MKAY
-						I IZ send_data YR file MKAY
-						I IZ send_command YR "226 AWSOME THX" MKAY
-					NO WAI,
-						I IZ send_command YR "421 O NOES" MKAY
-				OIC
+			OMG "NLST"
+				ftp_utilz IZ list_files MKAY
 				GTFO
 			OMG "STOR"
-				
+				ftp_utilz IZ store_file YR incoming_command AN YR "w+" MKAY
+				GTFO
+			OMG "APPE"
+				ftp_utilz IZ store_file YR incoming_command AN YR "a+" MKAY
+				GTFO
+			OMG "STRU"
+				socks_utilz IZ send_command YR "200 U BUILT TIS?" MKAY
+				GTFO
+			OMG "USER"
+				socks_utilz IZ send_command YR "202 OH HAI ANON" MKAY
+				GTFO
+			OMG "PASS"
+				socks_utilz IZ send_command YR "202 ITZ OKAI" MKAY
+				GTFO
+			OMG "PASV"
+				socks_utilz IZ send_command YR "202 NO U" MKAY
+				GTFO
+			OMG "PWD"
+				socks_utilz IZ send_command YR "257 :"/LUL:" GOTCHA YR FOLDR" MKAY
 				GTFO
 			OMG "NOOP"
-				I IZ send_command YR "200 YA SLEEPN?" MKAY
+				socks_utilz IZ send_command YR "200 U DED?" MKAY
+				GTFO
+			OMG "ACCT"
+				socks_utilz IZ send_command YR "202 ANON ONLY" MKAY
+				GTFO
+			OMG "CDUP"
+				socks_utilz IZ send_command YR "202 NOTHIN UP" MKAY
+				GTFO
+			OMG "SMNT"
+				socks_utilz IZ send_command YR "202 SOUNDZ LIEK MUCH WORK" MKAY
+				GTFO
+			OMG "REIN"
+				socks_utilz IZ send_command YR "200 BIP BOP BUP MKAY" MKAY
+				GTFO
+			OMG "STOU"
+				socks_utilz IZ send_command YR "202 DUPES OK" MKAY
+				GTFO
+			OMG "FEAT"
+				socks_utilz IZ send_command YR "211 I" MKAY
+				GTFO
+			OMG "SYST"
+				socks_utilz IZ send_command YR "215 LOL ITZ I" MKAY
+				GTFO
+			OMG "CWD"
+				socks_utilz IZ send_command YR "502 WERE U GOIN" MKAY
+				GTFO
+			OMG "REST"
+				socks_utilz IZ send_command YR "350 WATCHA WAITIN FOR" MKAY
+				GTFO
+			OMG "ALLO"
+				socks_utilz IZ send_command YR "202 CANT MATH" MKAY
+				GTFO
+			OMG "RNFR"
+				socks_utilz IZ send_command YR "502 U NO LIEK?" MKAY
+				GTFO
+			OMG "RNTO"
+				socks_utilz IZ send_command YR "502 U NO LIEK?" MKAY
+				GTFO
+			OMG "ABOR"
+				socks_utilz IZ send_command YR "226 STAHPPD" MKAY
+				GTFO
+			OMG "DELE"
+				socks_utilz IZ send_command YR "502 CANT DELET" MKAY
+				GTFO
+			OMG "RMD"
+				socks_utilz IZ send_command YR "502 CANT DELET" MKAY
+				GTFO
+			OMG "MKD"
+				socks_utilz IZ send_command YR "502 CANT MAEK" MKAY
+				GTFO
+			OMG "SITE"
+				socks_utilz IZ send_command YR "200 https://www.youtube.com/watch?v=wZZ7oFKsKzY" MKAY
+				GTFO
+			OMG "STAT"
+				socks_utilz IZ send_command YR "211 GOOD THX" MKAY
+				GTFO
+			OMG "HELP"
+				socks_utilz IZ send_command YR "211 PLZ" MKAY
 				GTFO
 			OMGWTF
-				I IZ send_command YR "502 WAT" MKAY
+				socks_utilz IZ send_command YR "502 WAT" MKAY
 				GTFO
 		OIC
 	IF U SAY SO
-	BTW ------------- handle command
-
-	BTW connection loop
+	
+	
+	BTW main loop
+	
 	IM IN YR connection_loop
 	
 		BTW listens for a connection
 		command_connection R I IZ SOCKS'Z LISTN YR command_socket MKAY
 		
 		BTW welcome message
-		I IZ send_command YR "220 TIS WORKIN? U LISTENIN?:)" MKAY
+		socks_utilz IZ send_command YR "220 TIS WORKIN? U LISTENIN?:)" MKAY
 		connection_open R WIN
 		
 		IM IN YR session_loop NERFIN YR mom TIL NOT connection_open
 
 			BTW reads the next command and reply
-			incoming_command R I IZ SOCKS'Z GET YR command_socket AN YR command_connection AN YR 1024 MKAY
-			VISIBLE "CMD IZ " AN incoming_command
-			I IZ handle_command MKAY
+			I HAS A incoming_command ITZ I IZ SOCKS'Z GET YR command_socket AN YR command_connection AN YR 1024 MKAY
+			
+			BTW checks if the incoming command is empty
+			BOTH SAEM incoming_command AN ""
+			O RLY?
+				YA RLY,
+					GTFO
+				NO WAI,
+					VISIBLE "CMD IZ " AN incoming_command
+					I IZ handle_command YR incoming_command MKAY
+			OIC
 	
 		IM OUTTA YR session_loop
 		
@@ -289,8 +429,5 @@ BTW				reply_command R "504 WATZ TTAT"
 		I IZ SOCKS'Z CLOSE YR command_connection MKAY
 		
 	IM OUTTA YR connection_loop
-	
-	BTW closes the socket
-    I IZ SOCKS'Z CLOSE YR command_socket MKAY
 	
 KTHXBYE
