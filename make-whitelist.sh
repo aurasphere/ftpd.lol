@@ -31,4 +31,5 @@
 #                                                                                #
 # ============================================================================== #
 
+# Lists the files in the current directory.
 ls -l | sed -n '1!p' > whitelist.lul
