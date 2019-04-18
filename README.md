@@ -48,8 +48,9 @@ Apart from the minimum implementation features, the following commands are also 
 
 ## Limitations
  - File upload maximum size = 1449 bytes.
+ - File transfer mode = active only. Passive is not supported due to the single-thread nature of the LOLCODE language.
  - Files are parsed using LOLCODE. This means that some specific character sequences are automatically converted while transferring files. These includes for example the sequence ":)" which is translated to a whitespace.
- - The server supports only one user at the time, due to the single thread nature of the LOLCODE language.
+ - The server supports only one user at the time, due to the single-thread nature of the LOLCODE language.
  - Since LOLCODE doesn't have any directory listing function, this server relies on a file called whitelist.lul which contains a list of files visible to the clients (populated using a given script). This means that any uploaded file won't be visible unless added to this file.
  - The server runs only on UNIX systems since LOLCODE 1.4 sockets' work only there.
  - If you are using an FTP client you can't save a file after editing. Instead you have to download it, edit it and then reupload it. This is not really a limitation but more of a feature not included into the RFC specification. It has been put here since it's probably a widely used feature.
