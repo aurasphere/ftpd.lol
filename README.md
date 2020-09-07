@@ -1,3 +1,5 @@
+[![Donate](https://img.shields.io/badge/Donate-PayPal-orange.svg)](https://www.paypal.com/donate/?cmd=_donations&business=8UK2BZP2K8NSS)
+
 # ftpd.lol
 Simple Unix FTP server written in LOLCODE. This server is a minimum implementation of the [RFC-959](https://tools.ietf.org/html/rfc959).
 
